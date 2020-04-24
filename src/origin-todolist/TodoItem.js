@@ -6,9 +6,39 @@ class TodoItem extends Component {
     super(props);
     // 将this指向当前react组件，在构造函数就指定this指向，有利于性能优化
     this.handleClick = this.handleClick.bind(this)
+    console.log('child constructor')
   }
 
+  componentWillReceiveProps() {
+    console.log('child componentWillReceiveProps');
+  }
+  componentWillMount() {
+    console.log('child componentWillMount')
+  }
+  componentDidMount() {
+    console.log('child componentDidMount')
+  }
+  shouldComponentUpdate(nextProps, nextState) {
+    console.log('child shouldComponentUpdate')
+    // return true
+    
+    // 当content内容有所改变时，才允许render
+    if(nextProps.content !== this.props.content) {
+      return true;
+    }else{
+      return false;
+    }
+    
+    
+  }
+  componentWillUpdate() {
+    console.log('child componentWillUpdate')
+  }
+  componentDidUpdate() {
+    console.log('child componentDidMount')
+  }
   render() {
+    console.log('child render')
     // 假设test也是父组件传过来的
     const { content } = this.props; // es6语法优化
     return (
@@ -20,6 +50,10 @@ class TodoItem extends Component {
     //   onClick: this.handleClick
     // }, content, React.createElement('span', {}, 'item'))
   }
+  componentWillUnmount() {
+    console.log('child componentWillUnmount')
+  }
+
   handleClick() {
     const {deleteItem, index} = this.props; // es6语法优化
     deleteItem(index) // 原来：this.props.deleteItem(this.props.index) 

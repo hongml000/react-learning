@@ -4,14 +4,17 @@ import React, { Component, Fragment } from 'react'
 // let Component = react.Component
 import TodoItem from './TodoItem'
 // import Test from './test.js'
+import axios from 'axios'
+
 import './style.css'
 // jsx的写法
 class Todolist extends Component {
   constructor(props) {  // 必写
+    console.log('parent constructor')
     super(props);   // 必写
     this.state = {
       inputValue: '',
-      list: ['学英语', '学医学'],
+      list: [],//['学英语', '学医学'],
       lastValue: ''
     }
     // 优化
@@ -19,8 +22,12 @@ class Todolist extends Component {
     this.handleChange = this.handleChange.bind(this)
     this.handleDelete = this.handleDelete.bind(this)
   }
+  componentWillMount() {
+    console.log('parent componentWillMount')
+    
+  }
   render() {
-    // console.log('render');
+    console.log('parent render');
     return (
       <Fragment>
         <div>
@@ -53,6 +60,43 @@ class Todolist extends Component {
       </Fragment>
     )
   }
+  componentDidMount() {
+    console.log('parent componentDidMount')
+    axios.get('api/todolist', {
+      baseURL: 'http://localhost.charlesproxy.com:3000'
+    })
+      .then((res) => {
+        console.log(res.data)
+        this.setState(()=>
+          // 只有一句时，return {list : [...res.data]}可以简写成括号返回
+          ({
+            // 建议写成浅拷贝，避免改变res.data的数据
+            list : [...res.data]
+          })
+        )
+
+      })
+      .catch((err) => {
+        debugger;
+        console.log(err)
+        alert('error')
+      })
+  }
+  shouldComponentUpdate() {
+    console.log('parent shouldComponentUpdate')
+    // 必须返回一个值，告知是否能够被更新，true为可被更新，false则不能
+    return true;
+    // 如果返回true，当改变state时，就会输出: shouldComponentUpdate -> render
+    // 如果返回false，当改变state时，发现不能有变化，且输出仅为：shouldComponentUpdate
+  }
+  componentWillUpdate() {
+    console.log('parent componentWillUpdate')
+    // 如果shouldComponentUpdate返回true,则输出：shouldComponentUpdate -> componentWillUpdate -> render
+  }
+  componentDidUpdate() {
+    console.log('parent componentDidUpdate')
+    // 当改变state时，,则输出：shouldComponentUpdate -> componentWillUpdate -> render -> componentDidUpdate
+  }
   getItem() {
     // 记得return
     return this.state.list.map((item, index) => {
@@ -68,8 +112,8 @@ class Todolist extends Component {
   }
   // e是获取到的事件,e.target是获取到的对象元素
   handleChange(e) {
-    console.log("e.target:", e.target)  // <input type="text" value="heloo">
-    console.log("ref:", this.input) //
+    // console.log("e.target:", e.target)  // <input type="text" value="heloo">
+    // console.log("ref:", this.input) //
     // this.state.inputValue = e.target.value; // 会报错，说找不到state
     // console.log(this) // undefined，说明this指向没指向上面的this
     // this.state.inputValue = e.target.value; // 改变this指向后还是不行，这是因为react只支持this.setState来改变数据
