@@ -1,38 +1,41 @@
 import React, { Component } from 'react'
-import { Input, Button, List } from "antd";
-import store from './store'
-// import { CHANGE_INPUT_VALUE, ADD_TODOITEM, DELETE_TODOITEM } from './store/actionTypes'
-import { getInputChangeAction, getAddItemAction, getDeleteItemAction} from './store/actionCreator'
+import store from '../store'
+import { getInputChangeAction, getAddItemAction, getDeleteItemAction, getInitTodoList} from '../store/actionCreator'
+import TodoListUI from './TodoListUI'
+import axios from 'axios'
 class TodoList extends Component {
   constructor(props) {
     super(props)
     this.addItem = this.addItem.bind(this)
     this.handleChange = this.handleChange.bind(this)
     this.handleStoreChange = this.handleStoreChange.bind(this)
-    // this.deleteItem = this.deleteItem.bind(this) // 要绑定额外参数，所以写在调用的事件上
-    // this.state = {
-    //   list: [],
-    //   inputValue: ''
-    // }
+    this.deleteItem = this.deleteItem.bind(this)
     this.state = store.getState();
     store.subscribe(this.handleStoreChange) // 监听store的变化，自动执行函数
   }
+  componentDidMount() {
+
+    // 获取列表
+    axios.get('http://localhost.charlesproxy.com:3000/api/todolist')
+    .then((res) => {
+      console.log()
+      const action = getInitTodoList(res.data)
+      store.dispatch(action)
+    })
+    .catch((err) => {
+      console.log(err)
+    })
+    
+  }
   render() {
     return (
-      <div>
-        <Input placeholder="请输入todoItem" value={this.state.inputValue} onChange={this.handleChange}/>
-        < Button 
-          type = "primary"
-          onClick = {
-            this.addItem
-          }
-        > 提交 </Button>
-        <List
-          bordered
-          dataSource={this.state.list}
-          renderItem={(item,index) => <List.Item onClick={this.deleteItem.bind(this, index)}>{item}</List.Item>}
-        />
-      </div>
+      <TodoListUI 
+        inputValue={this.state.inputValue}
+        handleChange={this.handleChange}
+        addItem={this.addItem}
+        list={this.state.list}
+        deleteItem={this.deleteItem}
+      />
     );
   }
   handleChange(e) {
