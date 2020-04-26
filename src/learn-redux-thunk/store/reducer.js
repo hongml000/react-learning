@@ -6,9 +6,9 @@ const defaultState = {
 }
 
 export default (state = defaultState, action) => {
-  console.log(state, action)
+  // console.log(state, action)
   if(action.type === INIT_TODOLIST) {
-    console.log(action)
+    // console.log(action)
     const newState = JSON.parse(JSON.stringify(state))
     newState.list = action.data
     return newState

@@ -1,8 +1,8 @@
 import React, { Component } from 'react'
-import store from '../store'
-import { getInputChangeAction, getAddItemAction, getDeleteItemAction, getInitTodoList} from '../store/actionCreator'
+import store from './store'
+import { getInputChangeAction, getAddItemAction, getDeleteItemAction, getTodoList} from './store/actionCreator'
 import TodoListUI from './TodoListUI'
-import axios from 'axios'
+// import axios from 'axios'
 class TodoList extends Component {
   constructor(props) {
     super(props)
@@ -15,17 +15,19 @@ class TodoList extends Component {
   }
   componentDidMount() {
 
-    // 获取列表
-    axios.get('http://localhost.charlesproxy.com:3000/api/todolist')
-    .then((res) => {
-      console.log()
-      const action = getInitTodoList(res.data)
-      store.dispatch(action)
-    })
-    .catch((err) => {
-      console.log(err)
-    })
-    
+    // // 获取列表
+    // axios.get('http://localhost.charlesproxy.com:3000/api/todolist')
+    // .then((res) => {
+    //   console.log()
+    //   const action = getInitTodoList(res.data)
+    //   store.dispatch(action)
+    // })
+    // .catch((err) => {
+    //   console.log(err)
+    // })
+    const action = getTodoList()
+    // 当调用dispatch将action传给store时，action（如果是个函数的话）将自动执行
+    store.dispatch(action)
   }
   render() {
     return (
