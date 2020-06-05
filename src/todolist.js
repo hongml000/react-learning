@@ -3,7 +3,7 @@ import React from 'react'
 
 // import store from './store'
 import { connect } from 'react-redux'
-
+import "./index.css"
 // TodoList只是一个UI组件，可优化成无状态组件
 const TodoList = (props) => {
   const { inputValue, changeInputValue, addItem, deleteItem, list } = props
@@ -13,6 +13,7 @@ const TodoList = (props) => {
           {/* <input value={ this.props.inputValue } onChange={ this.props.changeInputValue } type="text"/> */}
           <input value={ inputValue } onChange={ changeInputValue } type="text"/>
           <button onClick={ addItem }>提交</button>
+          <span className="testIcon"></span>
         </div>
         <ul>
           { list.map((item,index) => {

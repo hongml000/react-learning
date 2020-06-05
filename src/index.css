@@ -2,3 +2,6 @@
   width: 300px;
   margin: 10px;
 }
+.testIcon:after{
+  content: "\e63f"
+}

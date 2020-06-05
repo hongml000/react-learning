@@ -4,6 +4,7 @@ import TodoList from "./todolist";
 // 引入antd样式
 import "antd/dist/antd.css";
 import "./assets/iconfonts/iconfont.css"
+// import "./assets/iconfonts/iconfont.css"
 import './index.css';
 
 import { Provider } from 'react-redux'
