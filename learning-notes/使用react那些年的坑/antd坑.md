@@ -97,6 +97,29 @@ componentDidMount() {
 }
 ```
 
+最终解决：
+  直接在父组件中获取子组件的dom，直接操作子组件的方法，不需要子组件将方法传入父组件
+```jsx
+// father
+componentDidMount() {
+  fetchDate().then(res => {
+    // 设置子组件form的初始值
+    this.child.formRef.current.setFieldsValues(res.data)
+  })
+}
+<father>
+  <son
+    // child可以自己任意命名
+    onRef={ref => {this.child = ref}}
+  ></son>
+</father>
+
+// son
+formRef = React.createRef()
+<Form
+  ref={this.formRef}> 
+</Form>
+```
 ## DatePicker中的初始值设置
  DatePicker中的初始值设置必须是Moment对象
 ```js
@@ -137,6 +160,7 @@ export default TestForm
   // 设置每一行的key值， 一般为主键
   rowKey={record => record.id}
   rowSelections={
+    selectedRowKeys, // 控制选中项的keys列表
     type: "checkbox",
     onChange: (selectedRowKeys, selectedRows) => {
       console.log("已选中的selectedRowKeys:", selectedRowKeys)
@@ -148,10 +172,115 @@ export default TestForm
 ```
 
 # Input文本框自动填充内容时，有彩色背影色
-此问题仅在chrome浏览器上存在
+此问题仅在chrome浏览器上存在，且不仅为
 解决：设置文本内阴影，且让其足够大，仅适用于纯色背影色可用
 ```css
 input:-webkit-autofill {
   -webkit-box-shadow: 0 0 0px 1000px white inset !important;
 }
 ```
+
+# upload坑
+## 已上传的文件列表必须有uid，否则会报错
+```js
+// 将后台传入的[{name: "xxx", url: "xxx"}]变为[{name: "xxx", url:"xxx", uid: "xxx", status: "done"}]
+setUid(array) {
+  array && array.map(item => {
+    item.uid = "xxx"
+    // uid必须有，status可有可无，这里主要为了方便后面逻辑处理使用加上
+    item.status = "done"
+  })
+}
+```
+## 使用defaultFileList设置初始值，不显示文件列表
+defaultFileList仅适用于数据获取在前，组件渲染在后，即同步获取数据后渲染组件，因为defaultFileList不支持数据更改，仅接受第一次的值  
+如果组件渲染在前，后使用异步获取，再赋值，defaultFileList的值不会显示在视图中，defaultFileList仅适用于已知初始值的固定列表  
+```jsx
+<Upload {defaultFileList=[{name: "xxx.jpg", url: "xxxx", uid: "xxx"}]}>
+```
+```js
+// 改变状态
+onChange(info) {
+  const {file, fileList} = info;
+  if (file.status !== 'uploading') {
+      console.log(file, fileList);
+  }
+  let list = []
+  // 使用file的状态判断没有问题
+  if(file.status === "done") {
+    // do something
+    list = fileList.map(item => {
+      if(item.status === "done" && item.response) {
+        return {name: item.fetchName, url: item.fetchUrl}
+      }else if(item.status === "done" && item.url) {
+        return item
+      }
+    })
+    this.props.changeFileList(list)
+  }
+  if(file.status === "error") {
+    message.error("上传错误")
+  }
+}
+```
+如果要使用可变更文件列表，要使用fileList受控属性
+
+
+## 使用fileList文件列表时，onChange只执行一次，且file的status一直处于uploading状态
+在使用upload时，发现如果使用受控的fileList文件列表，使用file.status判断时会发现异常
+```js
+ handleChange = info => {
+    let fileList = [...info.fileList];
+    // 只接收最后两个文件
+    fileList = fileList.slice(-2);
+
+    // 这里如果使用info.file.status作为判断条件，就容易出错
+    // 打印日志会发现
+    console.log(info) // file只存在uploading状态
+    if(info.file.status === "done") {
+      // 从后台获取数据
+      fileList = fileList.map(file => {
+        if (file.response) {
+          // Component will show file.url as link
+          file.url = file.response.url;
+        }
+        return file;
+      });
+      this.setState({ fileList });
+    }
+  };
+
+// 修改：
+ handleChange = info => {
+    let fileList = [...info.fileList];
+    // 只接收最后两个文件
+    fileList = fileList.slice(-2);
+
+    // 这里如果使用info.file.status作为判断条件，就容易出错
+    // 打印日志会发现
+    console.log(info) // info.file只存在uploading状态
+    // if(info.file.status === "done") {
+    // 从后台获取数据
+    fileList = fileList.map(file => {
+      if (file.response) {
+        // Component will show file.url as link
+        file.url = file.response.url;
+      }
+      return file;
+    });
+    this.setState({ fileList });
+    // }
+  };
+```
+
+
+错误原因：
+onChange 中要始终 setState fileList，保证所有状态同步到 Upload 内,即onChange每个状态都要设置fileList的值，否则就会不再执行onChange  
+此外，还要注意使用，保证upload能感知变化
+```js
+this.setState({fileList: [...fileList]})
+```
+参考：https://github.com/ant-design/ant-design/issues/2423
+
+# antd select placeholder不显示
+因为初始值设了别的值，只有value为undefined时，才会显示placeholder，其它的（包括null, ""）不显示
