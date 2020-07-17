@@ -282,5 +282,89 @@ this.setState({fileList: [...fileList]})
 ```
 参考：https://github.com/ant-design/ant-design/issues/2423
 
+## 当有默认文件列表时，上传校验的文件数量不对
+使用以下代码时， 发现每次增加或删除文件时，会有抖动的现象，且文件数量的校验永远不成功；这是因为每次重新渲染时，都会执行 UNSAFE_componentWillReceiveProps 方法，先获取到props的数据，然后再执行 beforeUpload时，文件数据就永远是默认的原有文件数量，所以文件数量校验永远不成功；然后再执行 onChange 方法，更新文件列表，这过程就会有文件的展示变化，从而造成抖动
+```js
+constructor(props) {
+  super(props);
+  this.state= {
+    fileList: [],
+    fileNum: 0
+  }
+  // 默认的文件必须有uid，否则不会显示出来
+  this.setUid = this.setUid.bind(this)
+}
+UNSAFE_componentWillReceiveProps(props) {
+  // 每次获取默认的文件列表，并添加uid
+  const list = props.fileList ? this.setUid(props.fileList) : []
+  this.setState({
+    fileList: list，
+    fileNum: list.length
+  })
+}
+beforeUpload = (file, fileList) => {
+  // fileList是当前要上传的数量，fileNum是之前已上传的文件数量
+  if(fileList.length + this.state.fileNum > 10) {
+    message.error(`只能上传10个文件`);
+    return Promise.reject(false)
+  }else {
+    return true;
+  }
+}
+onChange = info => {
+  let fileList = [...info.fileList];
+  fileList = fileList.map(file => {
+    if(file.reponse) {
+      file.url = file.response.data.url;
+      file.name = file.reponse.data.name;
+    }
+    return file;
+  })
+  this.setState({
+    fileNum: fileList.length,
+    fileList
+  })
+}
+```
+
+解决方案，加个标识符，标识是否是初次获取的默认文件数量，如果不是，则直接取onChange后的文件数量
+```js
+constructor(props) {
+  super(props);
+  this.state= {
+    fileList: [],
+    fileNum: 0,
+    isChangeFileList: false
+  }
+}
+UNSAFE_componentWillReceiveProps(props) {
+  // 只有没有操作过附件，才从默认文件列表中获取数据
+  if(!isChangeFileList) {
+    const list = props.fileList ? this.setUid(props.fileList) : []
+    this.setState({
+      fileList: list，
+      fileNum: list.length
+  })
+  }
+}
+onChange = info => {
+  let fileList = [...info.fileList];
+  fileList = fileList.map(file => {
+    if(file.reponse) {
+      file.url = file.response.data.url;
+      file.name = file.reponse.data.name;
+    }
+    return file;
+  })
+  this.setState({
+    // 只要改变过，就将标识符设为true，之后数据都以更改过后的文件列表为准
+    isChangeFileList: true,
+    fileNum: fileList.length,
+    fileList
+  })
+}
+```
+
+
 # antd select placeholder不显示
 因为初始值设了别的值，只有value为undefined时，才会显示placeholder，其它的（包括null, ""）不显示
